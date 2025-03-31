@@ -3,11 +3,16 @@ import pypdf
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 import uuid
 import os
+import chromadb.utils.embedding_functions as embedding_functions
 
+
+huggingface_ef = embedding_functions.HuggingFaceEmbeddingFunction(
+    api_key="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",
+    model_name="sentence-transformers/all-MiniLM-L6-v2"
+)
 
 chroma_client = chromadb.Client()
 pdf_collection = chroma_client.get_or_create_collection(name="pdf_docs")
-
 
 def extract_text_from_pdf(pdf_file):
     pages = []
@@ -20,7 +25,6 @@ def extract_text_from_pdf(pdf_file):
             pages.append((page_text, page_num + 1))
 
     return pages
-
 
 def handle_multiple_pdfs(pdf_files):
     for pdf_file in pdf_files:
@@ -38,9 +42,12 @@ def handle_multiple_pdfs(pdf_files):
             metadata.extend([{"source": pdf_file, "page": page_number}] * len(
                 page_chunks))
 
+        embeddings = huggingface_ef(chunks)
+
         pdf_collection.add(
             documents=chunks,
             metadatas=metadata,
+            embeddings=embeddings,
             ids=[str(uuid.uuid4()) for _ in chunks]
         )
 
@@ -53,3 +60,16 @@ pdf_files = [
 ]
 
 handle_multiple_pdfs(pdf_files)
+
+''' 
+--TEST--
+query_text = "What is artificial intelligence?"
+query_embedding = huggingface_ef([query_text])
+
+results = pdf_collection.query(
+    query_embeddings=query_embedding,
+    n_results=2
+)
+
+print(results)
+'''
