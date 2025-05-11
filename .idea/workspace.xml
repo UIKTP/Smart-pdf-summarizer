@@ -4,13 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="389816f1-4790-4ed1-b83f-2893279ee1e4" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/data_level0.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/data_level0.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/header.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/header.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/length.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/length.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/link_lists.bin" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/24400761-65c1-4965-b940-78ca04c9f6fc/link_lists.bin" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/requirements.txt" beforeDir="false" afterPath="$PROJECT_DIR$/requirements.txt" afterDir="false" />
+    <list default="true" id="389816f1-4790-4ed1-b83f-2893279ee1e4" name="Changes" comment="Added requirements, AI summarization and question answering and updated .git_ignore">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -32,6 +27,18 @@
     </option>
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
+  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+  "lastFilter": {
+    "state": "OPEN",
+    "assignee": "ivanOvOgnen"
+  }
+}]]></component>
+  <component name="GithubPullRequestsUISettings"><![CDATA[{
+  "selectedUrlAndAccountId": {
+    "url": "https://github.com/UIKTP/Smart-pdf-summarizer.git",
+    "accountId": "8c70518a-102f-4888-a4a5-8f8139f8e265"
+  }
+}]]></component>
   <component name="ProjectColorInfo"><![CDATA[{
   "associatedIndex": 6
 }]]></component>
@@ -70,14 +77,27 @@
       <option name="number" value="Default" />
       <option name="presentableId" value="Default" />
       <updated>1746272678653</updated>
-      <workItem from="1746272680322" duration="11818000" />
+      <workItem from="1746272680322" duration="14522000" />
     </task>
+    <task id="LOCAL-00001" summary="Added requirements, AI summarization and question answering and updated .git_ignore">
+      <option name="closed" value="true" />
+      <created>1746285032595</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1746285032595</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="3" />
   </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="Added requirements, AI summarization and question answering and updated .git_ignore" />
+    <option name="LAST_COMMIT_MESSAGE" value="Added requirements, AI summarization and question answering and updated .git_ignore" />
+  </component>
   <component name="com.intellij.coverage.CoverageDataManagerImpl">
-    <SUITE FILE_PATH="coverage/Smart_pdf_summarizer$ai_pipeline.coverage" NAME="ai_pipeline Coverage Results" MODIFIED="1746284588797" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
+    <SUITE FILE_PATH="coverage/Smart_pdf_summarizer$ai_pipeline.coverage" NAME="ai_pipeline Coverage Results" MODIFIED="1746284746718" SOURCE_PROVIDER="com.intellij.coverage.DefaultCoverageFileProvider" RUNNER="coverage.py" COVERAGE_BY_TEST_ENABLED="false" COVERAGE_TRACING_ENABLED="false" WORKING_DIRECTORY="$PROJECT_DIR$" />
   </component>
 </project>
