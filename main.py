@@ -12,6 +12,11 @@ from docx import Document as DocxDocument
 from datetime import datetime
 import chromadb
 import re
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi.requests import Request
+from fastapi.responses import HTMLResponse
+from fastapi import Form
 
 # Settings
 FOLDER_PATH = "uploads"
@@ -27,6 +32,10 @@ os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
 
 # Initialize FastAPI app
 app = FastAPI(title="PDF Processing API")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+templates = Jinja2Templates(directory="templates")
 
 
 # Pydantic models
@@ -143,21 +152,22 @@ def get_chat_history(doc_id: str) -> List[ChatItem]:
 
 
 # Endpoints
-@app.get("/home")
-async def home():
+@app.get("/home", response_class=HTMLResponse)
+async def home(request: Request):
     try:
         pdf_files = [
             {"id": str(uuid.uuid5(uuid.NAMESPACE_DNS, f)), "name": f}
             for f in os.listdir(FOLDER_PATH)
             if f.lower().endswith(".pdf")
         ]
-        return {"message": f"Found {len(pdf_files)} PDFs", "pdfs": pdf_files}
+        return templates.TemplateResponse("home.html", {"request": request, "pdfs": pdf_files})
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error listing PDFs: {str(e)}")
 
 
-@app.get("/document/{id}")
-async def get_document(id: str):
+
+@app.get("/document/{id}",response_class=HTMLResponse)
+async def get_document(id: str,request: Request):
     try:
         pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
                      f.lower().endswith(".pdf")}
@@ -166,7 +176,12 @@ async def get_document(id: str):
 
         name = pdf_files[id]
         chat_history = get_chat_history(id)
-        return DocumentResponse(id=id, name=name, chat_history=chat_history)
+        return templates.TemplateResponse("document.html", {
+            "request": request,
+            "id": id,
+            "name": name,
+            "chat_history": chat_history
+        })
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
 
@@ -244,7 +259,7 @@ async def generate_test_document(id: str):
 
 
 @app.post("/document/{id}")
-async def ask_question(id: str, question: str = Query(...)):
+async def ask_question(id: str, question: str = Form(...)):
     try:
         pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
                      f.lower().endswith(".pdf")}

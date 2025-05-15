@@ -5,9 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="389816f1-4790-4ed1-b83f-2893279ee1e4" name="Changes" comment="Added requirements, AI summarization and question answering and updated .git_ignore">
+      <change beforePath="$PROJECT_DIR$/.idea/Smart-pdf-summarizer.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/Smart-pdf-summarizer.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" beforeDir="false" afterPath="$PROJECT_DIR$/chroma_db/chroma.sqlite3" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/main.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -51,17 +51,20 @@
   </component>
   <component name="PropertiesComponent"><![CDATA[{
   "keyToString": {
+    "ModuleVcsDetector.initialDetectionPerformed": "true",
     "Python.ai_pipeline.executor": "Run",
     "Python.main.executor": "Run",
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "#1 on feature/ai",
+    "git-widget-placeholder": "feature/ai",
+    "ignore.virus.scanning.warn.message": "true",
     "last_opened_file_path": "C:/Users/ognen/UIKTP Project/Smart-pdf-summarizer",
     "node.js.detected.package.eslint": "true",
     "node.js.detected.package.tslint": "true",
     "node.js.selected.package.eslint": "(autodetect)",
     "node.js.selected.package.tslint": "(autodetect)",
     "nodejs_package_manager_path": "npm",
+    "settings.editor.selected.configurable": "com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable",
     "vue.rearranger.settings.migration": "true"
   }
 }]]></component>
@@ -83,6 +86,7 @@
       <workItem from="1746272680322" duration="14522000" />
       <workItem from="1747226014759" duration="322000" />
       <workItem from="1747323198985" duration="1692000" />
+      <workItem from="1747330956531" duration="636000" />
     </task>
     <task id="LOCAL-00001" summary="Added requirements, AI summarization and question answering and updated .git_ignore">
       <option name="closed" value="true" />
