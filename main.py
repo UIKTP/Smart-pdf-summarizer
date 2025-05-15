@@ -1,119 +1,268 @@
 import os
-from pdf_handler import split_pdf_to_chunks
-from chroma_manager import store_chunks_in_chroma
-from fastapi import FastAPI, HTTPException
+import uuid
+import json
+from fastapi import FastAPI, HTTPException, UploadFile, File, Query
+from fastapi.responses import RedirectResponse, FileResponse
 from pydantic import BaseModel
 from typing import List, Dict
 import uvicorn
+from pdf_handler import split_pdf_to_chunks
+from chroma_manager import store_chunks_in_chroma
+from docx import Document as DocxDocument
+from datetime import datetime
+import chromadb
+import re
 
+# Settings
 FOLDER_PATH = "uploads"
+CHROMA_DIR = "./chroma_db"
+CHROMA_COLLECTION = "pdf_docs"
+OUTPUT_DIR = "outputs"
+CHAT_HISTORY_DIR = "chat_history"
 
-# Ensure uploads folder exists
+# Ensure directories exist
 os.makedirs(FOLDER_PATH, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+os.makedirs(CHAT_HISTORY_DIR, exist_ok=True)
 
 # Initialize FastAPI app
 app = FastAPI(title="PDF Processing API")
 
 
-# Original function, unchanged
-def process_all_pdfs():
-    pdf_files = [
-        os.path.join(FOLDER_PATH, f)
-        for f in os.listdir(FOLDER_PATH)
-        if f.lower().endswith(".pdf")
-    ]
-
-    if not pdf_files:
-        print("[!] No PDF files found in 'uploads' folder.")
-        return
-
-    for file in pdf_files:
-        print(f"\n[+] Processing {file}")
-        chunks, metadata = split_pdf_to_chunks(file)
-
-        if chunks:
-            total = store_chunks_in_chroma(chunks, metadata)
-            print(f"[✓] Stored {total} chunks from {file}")
-        else:
-            print(f"[!] No text found in {file}")
+# Pydantic models
+class PDFItem(BaseModel):
+    id: str
+    name: str
 
 
-# Pydantic model for POST response
-class ProcessResponse(BaseModel):
-    message: str
-    processed_files: List[Dict[str, str | int]]
+class ChatItem(BaseModel):
+    question: str
+    answer: str
+    timestamp: str
 
 
-# Endpoint 1: POST /process - Trigger PDF processing
-@app.post("/process", response_model=ProcessResponse)
-async def process_pdfs():
+class DocumentResponse(BaseModel):
+    id: str
+    name: str
+    chat_history: List[ChatItem]
+
+
+# Helper functions
+def simple_summarize(chunks: List[str], length: str = "medium") -> str:
+    """
+    Generate a simple summary by extracting key sentences based on length.
+    - length: "short" (2-3 sentences), "medium" (4-6 sentences), "long" (7-10 sentences)
+    """
+    # Combine all chunks into one text
+    text = " ".join(chunks)
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    # Determine number of sentences based on length
+    length_map = {"short": 3, "medium": 6, "long": 10}
+    num_sentences = length_map.get(length, 6)
+
+    # Simple heuristic: take first N sentences (could be improved with TF-IDF or sentence scoring)
+    selected_sentences = sentences[:min(num_sentences, len(sentences))]
+    return " ".join(selected_sentences)
+
+
+def generate_test(chunks: List[str]) -> str:
+    """
+    Generate a simple test with 5 multiple-choice questions based on chunk content.
+    """
+    text = " ".join(chunks)
+    sentences = re.split(r'[.!?]+', text)
+    sentences = [s.strip() for s in sentences if s.strip()]
+
+    # Generate 5 questions by selecting sentences and creating dummy options
+    questions = []
+    for i, sentence in enumerate(sentences[:5], 1):
+        # Simple question: turn sentence into a question
+        question_text = f"Question {i}: What is true about the following? {sentence}"
+        options = [
+            f"A) {sentence} (Correct)",
+            f"B) Not {sentence}",
+            "C) Unrelated option",
+            "D) Another unrelated option"
+        ]
+        questions.append(f"{question_text}\n" + "\n".join(options))
+
+    return "\n\n".join(questions)
+
+
+def simple_qa(query: str, chunks: List[str]) -> str:
+    """
+    Perform a simple keyword-based search to answer a query.
+    """
+    query_words = set(query.lower().split())
+    best_match = None
+    max_overlap = 0
+
+    for chunk in chunks:
+        chunk_words = set(chunk.lower().split())
+        overlap = len(query_words.intersection(chunk_words))
+        if overlap > max_overlap:
+            max_overlap = overlap
+            best_match = chunk
+
+    if best_match:
+        return best_match[:500] + "..." if len(best_match) > 500 else best_match
+    return "No relevant information found in the PDF."
+
+
+def save_to_docx(content: str, filename: str) -> str:
+    doc = DocxDocument()
+    doc.add_paragraph(content)
+    filepath = os.path.join(OUTPUT_DIR, filename)
+    doc.save(filepath)
+    return filepath
+
+
+def save_chat_history(doc_id: str, question: str, answer: str):
+    history_file = os.path.join(CHAT_HISTORY_DIR, f"{doc_id}.json")
+    history = []
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            history = json.load(f)
+    history.append({
+        "question": question,
+        "answer": answer,
+        "timestamp": datetime.now().isoformat()
+    })
+    with open(history_file, "w") as f:
+        json.dump(history, f, indent=2)
+
+
+def get_chat_history(doc_id: str) -> List[ChatItem]:
+    history_file = os.path.join(CHAT_HISTORY_DIR, f"{doc_id}.json")
+    if os.path.exists(history_file):
+        with open(history_file, "r") as f:
+            return [ChatItem(**item) for item in json.load(f)]
+    return []
+
+
+# Endpoints
+@app.get("/home")
+async def home():
     try:
         pdf_files = [
-            os.path.join(FOLDER_PATH, f)
+            {"id": str(uuid.uuid5(uuid.NAMESPACE_DNS, f)), "name": f}
             for f in os.listdir(FOLDER_PATH)
             if f.lower().endswith(".pdf")
         ]
+        return {"message": f"Found {len(pdf_files)} PDFs", "pdfs": pdf_files}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error listing PDFs: {str(e)}")
 
-        if not pdf_files:
-            return ProcessResponse(
-                message="No PDF files found in 'uploads' folder.",
-                processed_files=[]
-            )
 
-        results = []
-        for file in pdf_files:
-            chunks, metadata = split_pdf_to_chunks(file)
-            if chunks:
-                total = store_chunks_in_chroma(chunks, metadata)
-                results.append({"file": file, "chunks_stored": total})
-            else:
-                results.append({"file": file, "chunks_stored": 0, "error": "No text found"})
+@app.get("/document/{id}")
+async def get_document(id: str):
+    try:
+        pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
+                     f.lower().endswith(".pdf")}
+        if id not in pdf_files:
+            raise HTTPException(status_code=404, detail="Document not found")
 
-        return ProcessResponse(
-            message="PDF processing completed.",
-            processed_files=results
+        name = pdf_files[id]
+        chat_history = get_chat_history(id)
+        return DocumentResponse(id=id, name=name, chat_history=chat_history)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error retrieving document: {str(e)}")
+
+
+@app.post("/document/upload")
+async def upload_pdf(file: UploadFile = File(...)):
+    try:
+        if not file.filename.lower().endswith(".pdf"):
+            raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+
+        file_path = os.path.join(FOLDER_PATH, file.filename)
+        with open(file_path, "wb") as f:
+            f.write(await file.read())
+
+        # Process the uploaded PDF
+        chunks, metadata = split_pdf_to_chunks(file_path)
+        if chunks:
+            store_chunks_in_chroma(chunks, metadata)
+
+        return RedirectResponse(url="/home", status_code=303)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error uploading PDF: {str(e)}")
+
+
+@app.get("/document/summarizer/{id}")
+async def summarize_document(id: str):
+    try:
+        pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
+                     f.lower().endswith(".pdf")}
+        if id not in pdf_files:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        file_path = os.path.join(FOLDER_PATH, pdf_files[id])
+        chunks, _ = split_pdf_to_chunks(file_path)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No text found in PDF")
+
+        summary = simple_summarize(chunks, length="medium")
+        filename = f"summary_{pdf_files[id]}.docx"
+        file_path = save_to_docx(summary, filename)
+
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            headers={"X-Redirect": f"/document/{id}"}
         )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing PDFs: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating summary: {str(e)}")
 
 
-# Endpoint 2: GET /files - List PDFs in uploads folder
-@app.get("/files")
-async def list_pdf_files():
+@app.get("/document/test/{id}")
+async def generate_test_document(id: str):
     try:
-        pdf_files = [
-            f for f in os.listdir(FOLDER_PATH)
-            if f.lower().endswith(".pdf")
-        ]
-        return {
-            "message": f"Found {len(pdf_files)} PDF files.",
-            "files": pdf_files
-        }
+        pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
+                     f.lower().endswith(".pdf")}
+        if id not in pdf_files:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        file_path = os.path.join(FOLDER_PATH, pdf_files[id])
+        chunks, _ = split_pdf_to_chunks(file_path)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No text found in PDF")
+
+        test = generate_test(chunks)
+        filename = f"test_{pdf_files[id]}.docx"
+        file_path = save_to_docx(test, filename)
+
+        return FileResponse(
+            path=file_path,
+            filename=filename,
+            headers={"X-Redirect": f"/document/{id}"}
+        )
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error listing files: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error generating test: {str(e)}")
 
 
-# Endpoint 3: GET /chunks - Retrieve stored chunks metadata
-@app.get("/chunks")
-async def get_chunks():
+@app.post("/document/{id}")
+async def ask_question(id: str, question: str = Query(...)):
     try:
-        from chromadb import PersistentClient
-        chroma_client = PersistentClient(path="./chroma_db")
-        collection = chroma_client.get_collection("pdf_docs")
-        results = collection.get(include=["metadatas"])
+        pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if
+                     f.lower().endswith(".pdf")}
+        if id not in pdf_files:
+            raise HTTPException(status_code=404, detail="Document not found")
 
-        chunk_count = len(results["metadatas"])
-        return {
-            "message": f"Found {chunk_count} chunks in ChromaDB.",
-            "chunk_count": chunk_count,
-            "metadata": results["metadatas"]
-        }
+        file_path = os.path.join(FOLDER_PATH, pdf_files[id])
+        chunks, _ = split_pdf_to_chunks(file_path)
+        if not chunks:
+            raise HTTPException(status_code=400, detail="No text found in PDF")
+
+        answer = simple_qa(question, chunks)
+        save_chat_history(id, question, answer)
+
+        return RedirectResponse(url=f"/document/{id}", status_code=303)
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error retrieving chunks: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
 
 
-# Original main block, unchanged
 if __name__ == "__main__":
-    process_all_pdfs()
-    # Optionally start FastAPI server
     uvicorn.run(app, host="0.0.0.0", port=8000)
