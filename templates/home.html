@@ -69,9 +69,14 @@
           
           <ul class="list-group">
             {% for document in pdfs %}
-            <li class="list-group-item d-flex align-items-center">
-              <img src="/static/pdf.svg" alt="PDF" style="width: 30px;" class="me-2">
-              <a class="text-dark" style="text-decoration: none" href="/document/{{ document.id }}"><span>{{ document.name }}</span></a>
+            <li class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                 <img src="/static/pdf.svg" alt="PDF" style="width: 30px;" class="me-2">
+                 <a class="text-dark" style="text-decoration: none" href="/document/{{ document.id }}"><span>{{ document.name }}</span></a>
+             </div>
+              <form method="post" action="/document/delete/{{ document.id }}">
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+              </form>
             </li>
             {% endfor %}
           </ul>

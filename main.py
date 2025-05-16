@@ -37,6 +37,8 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 
 templates = Jinja2Templates(directory="templates")
 
+MAX_PDF_UPLOAD = 2
+MAX_PDF_SIZE_MB = 1
 
 # Pydantic models
 class PDFItem(BaseModel):
@@ -189,12 +191,29 @@ async def get_document(id: str,request: Request):
 @app.post("/document/upload")
 async def upload_pdf(file: UploadFile = File(...)):
     try:
+        
         if not file.filename.lower().endswith(".pdf"):
             raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+        
+        pdf_files = [f for f in os.listdir(FOLDER_PATH) if f.lower().endswith(".pdf")]
+        if len(pdf_files)+1 > MAX_PDF_UPLOAD:
+            raise HTTPException(
+                status_code=400, 
+                detail=f"You cannot upload more than {MAX_PDF_UPLOAD} PDF documents."
+            )
+        
+        content = await file.read()
+
+        size_mb = len(content) / (1024 * 1024) 
+        if size_mb > MAX_PDF_SIZE_MB:
+            raise HTTPException(
+                status_code=400,
+                detail=f"The size of the PDF document must not exceed {MAX_PDF_SIZE_MB} MB."
+            )
 
         file_path = os.path.join(FOLDER_PATH, file.filename)
         with open(file_path, "wb") as f:
-            f.write(await file.read())
+            f.write(content)
 
         # Process the uploaded PDF
         chunks, metadata = split_pdf_to_chunks(file_path)
@@ -278,6 +297,33 @@ async def ask_question(id: str, question: str = Form(...)):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing question: {str(e)}")
 
+@app.post("/document/delete/{id}")
+async def delete_document(id: str, request: Request):
+    try:
+        
+        pdf_files = {str(uuid.uuid5(uuid.NAMESPACE_DNS, f)): f for f in os.listdir(FOLDER_PATH) if f.lower().endswith(".pdf")}
+        
+        if id not in pdf_files:
+            raise HTTPException(status_code=404, detail="Document not found")
+
+        filename = pdf_files[id]
+        file_path = os.path.join(FOLDER_PATH, filename)
+        
+        if os.path.exists(file_path):
+            os.remove(file_path)
+
+        history_path = os.path.join(CHAT_HISTORY_DIR, f"{id}.json")
+        if os.path.exists(history_path):
+            os.remove(history_path)
+
+        for suffix in ["summary_", "test_"]:
+            docx_file = os.path.join(OUTPUT_DIR, f"{suffix}{filename.replace('.pdf', '.docx')}")
+            if os.path.exists(docx_file):
+                os.remove(docx_file)
+
+        return RedirectResponse(url="/home", status_code=303)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error deleting document: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
