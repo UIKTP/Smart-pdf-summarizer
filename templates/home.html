@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Home</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script></head>
+  <style>
+    .cards{
+      height: 300px;
+      border-radius: 25px;
+      background: white;
+      transition: transform 0.3s ease-in-out;
+    }
+    .cards:hover{
+      transform: scale(1.1);
+      background:#ac59f7;
+    }
+    .cards:hover .title,
+    .cards:hover .text-muted {
+      color: #FFF2F2 !important;
+    }
+    .title{
+      color: #451571;
+    }
+    .title2{
+      color:#0E2F44;
+    }
+    .custom-btn{
+      border-radius: 10px;
+      background: #6897bb;
+      transition: transform 0.3s ease-in-out;
+    }
+    .custom-btn:hover{
+      background: #6897bb;
+      transform: scale(1.1);
+    }
+    body, html {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+  </style>
+
+<body class="bg">
+<nav class="navbar shadow-sm px-5  navbar-expand-lg bg-light">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="/home"><img style="width:150px" src="/static/logo.png"></a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav ms-auto">
+        <li class="nav-item">
+          <a style="font-size: 18px;" class="title2 text-uppercase nav-link active" aria-current="page" href="/home">Home</a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+<div class="container pt-4 mt-5">
+  <div class="row">
+    <div class="mb-5 col-md-4">
+      <div style="height: 400px" class="p-3  bg-white shadow rounded">
+        <h5 class="fw-bold title2 py-2">Your PDF Files</h5>
+        <div class="mt-3" style="max-height: 300px; overflow-y: auto;">
+          {% if pdfs %}
+          
+          <ul class="list-group">
+            {% for document in pdfs %}
+            <li class="list-group-item d-flex align-items-center justify-content-between">
+              <div class="d-flex align-items-center">
+                 <img src="/static/pdf.svg" alt="PDF" style="width: 30px;" class="me-2">
+                 <a class="text-dark" style="text-decoration: none" href="/document/{{ document.id }}"><span>{{ document.name }}</span></a>
+             </div>
+              <form method="post" action="/document/delete/{{ document.id }}">
+                <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+              </form>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="text-center pt-5"><h5>No PDF documents</h5></div>
+          {% endif %}
+        
+        </div>
+      </div>
+    </div>
+
+
+    <div class="mb-5 col-md-8">
+      <div style="height:400px" class="p-5 bg-white shadow rounded  text-center">
+        <img class="mt-3 " src="/static/upload_pdf.png" alt="Upload" style="width: 100px;">
+        <form method="post" enctype="multipart/form-data" action="/document/upload">
+            <h5 class="fw-bold my-3">UPLOAD <span style="color:#6897bb">PDF FILE</span></h5>
+            <input required class="form-control w-50 mx-auto" type="file" id="fileInput" name="file" accept="application/pdf">
+            <button class="btn px-4 text-light custom-btn mt-3">Upload</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="container mt-5">
+  <h3 class="fw-bold title2 text-center">Why choose Smart PDF Summarizer?</h3>
+  <p class="text-center">Smart PDF Summarizer offers 3 features:</p>
+
+  <div class="row my-5">
+    <div class="col-md-4">
+      <div class="p-3 m-4 cards shadow text-center">
+        <div style="height: 100px">
+          <img src="/static/summarization.png" alt="Feature" style="width: 100px;">
+        </div>
+        <h5 class="mt-2 title">AI Summarization of Long PDFs</h5>
+        <p class="text-muted">Save time by having AI summarize your long PDFs, providing you with summaries.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 m-3 cards shadow text-center">
+        <div style="height: 100px">
+          <img src="/static/exam.png" alt="Feature" style="width: 80px;">
+        </div>
+        <h5 class="mt-2 title">Generating a Test from a PDFs</h5>
+        <p class="text-muted">Save time by using AI to generate a test with questions from your PDFs.</p>
+      </div>
+    </div>
+    <div class="col-md-4">
+      <div class="p-3 m-3 cards shadow  text-center">
+        <div style="height: 100px">
+          <img src="/static/robot.png" alt="Feature" style="width: 100px;">
+        </div>
+        <h5 class="mt-2 title">ChatBot for questions from PDFs.</h5>
+        <p class="text-muted">Get quick answers from your PDFs! Our AI-powered chatbot extracts key information, summaries, and insights to help you find what you need instantly.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<footer class="bg-dark mt-auto text-white text-center p-3 mt-5">
+  Smart PDF Summarizer - UIKTP - 2025
+</footer>
+</body>
+</html>
